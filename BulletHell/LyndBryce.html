@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projectile Example</title>
+    <style>
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: black;
+        }
+        ::backdrop {
+            background-color: black;
+        }
+
+        body {
+            background-color: black;
+        }
+        #ScoreBox, #TimeBox {
+            top: 10px;
+            color: white;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="TimeBox">Time:</div>
+    <div id="ScoreBox">Score:</div>
+    <canvas id="canva"></canvas>
+    <script>
+        let canvas = document.getElementById("canva");
+        let ctx = canvas.getContext("2d");
+        let projectiles = [];
+        let score = 0;
+        let time = 0;
+
+    // Function to resize the canvas to fit the screen
+    function resizeCanvas() {
+        canvas.width = window.innerWidth * 0.99;
+        canvas.height = window.innerHeight * 0.9;
+    }
+
+    // Projectile constructor
+    function createProjectile() {
+        let side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
+        let projectile = {
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            width: 10,
+            height: 10,
+            color: "blue" // Set the projectile color to blue
+        };
+
+        // Randomize spawn point and velocity based on the side
+        if (side === 0) { // Top
+            projectile.x = Math.random() * canvas.width;
+            projectile.y = 0;
+            projectile.vx = 0;
+            projectile.vy = 5;
+        } else if (side === 1) { // Right
+            projectile.x = canvas.width;
+            projectile.y = Math.random() * canvas.height;
+            projectile.vx = -5;
+            projectile.vy = 0;
+        } else if (side === 2) { // Bottom
+            projectile.x = Math.random() * canvas.width;
+            projectile.y = canvas.height;
+            projectile.vx = 0;
+            projectile.vy = -5;
+        } else if (side === 3) { // Left
+            projectile.x = 0;
+            projectile.y = Math.random() * canvas.height;
+            projectile.vx = 5;
+            projectile.vy = 0;
+        }
+
+        projectiles.push(projectile);
+    }
+
+    // Update projectiles
+    function updateProjectiles() {
+        for (let i = projectiles.length - 1; i >= 0; i--) {
+            let p = projectiles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Remove projectile if it goes out of bounds
+            if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+                projectiles.splice(i, 1);
+            }
+        }
+    }
+
+    // Draw projectiles
+    function drawProjectiles() {
+        ctx.fillStyle = "red";
+        for (let p of projectiles) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Game loop
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+        updateProjectiles();
+        drawProjectiles();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Spawn a new projectile every second
+    setInterval(createProjectile, 1000);
+    function updateTime() {
+        time++;
+        document.getElementById("TimeBox").innerText = "Time: " + time + "s";
+    }
+    setInterval(updateTime, 1000); // Update time every second
+    setInterval(updateScore, 1000); // Update score every 5 seconds
+    
+    function updateScore() {
+        score++;
+        document.getElementById("ScoreBox").innerText = "Score: " + score;
+    }
+
+    // Resize the canvas when the window is resized
+    window.addEventListener("resize", resizeCanvas);
+
+    // Initial canvas size
+    resizeCanvas();
+
+    let player = {
+        x: 0,
+        y: 0,
+        width: 75,
+        height: 50,
+        image: new Image(),
+        speed: 10,
+        health: 10
+    };
+
+    player.image.src = "Avatar_R.png";
+
+    function move() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.drawImage(player.image, player.x, player.y, player.width, player.height);
+
+        requestAnimationFrame(move);
+    }
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "w" || event.key === "ArrowUp") {
+            if (player.y > 0) player.y -= player.speed;
+        }
+        if (event.key === "s" || event.key === "ArrowDown") {
+            if (player.y + player.height < canvas.height) player.y += player.speed;
+        }
+        if (event.key === "a" || event.key === "ArrowLeft") {
+            if (player.x > 0) player.x -= player.speed;
+            player.image.src = "Avatar_L.png"
+        }
+        if (event.key === "d" || event.key === "ArrowRight") {
+            if (player.x + player.width < canvas.width) player.x += player.speed;
+            player.image.src = "Avatar_R.png"
+        }
+    });
+
+    player.image.onload = () => {
+        move();
+    };
+</script>
+
+</html>
