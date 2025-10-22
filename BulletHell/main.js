@@ -6,8 +6,8 @@ class Game {
         this.height = this.canvas.height;
 
         this.player = new Player(this.width / 2, this.height - 50);
-    this.mouseX = this.width / 2;
-    this.mouseY = this.height / 2;
+        this.mouseX = this.width / 2;
+        this.mouseY = this.height / 2;
         this.bullets = [];
         this.enemies = [];
         this.shooters = [];
@@ -43,6 +43,17 @@ class Game {
         this.tankSpawnTimer = 0;
         this.sprinterSpawnTimer = 0;
         this.bossSpawnTimer = 0;
+
+        // UI hit rects used by canvas mouse interactions
+        // <-- MOVE/INITIALIZE uiRects BEFORE starting the loop/listeners
+        this.uiRects = {
+            startButton: null,
+            colorBox: null,
+            shapeBox: null,
+            previewBox: null,
+            upgradeOptions: [], // array of rects
+            pause: { resumeButton: null, restartButton: null }
+        };
 
         this.setupEventListeners();
         this.gameLoop();
@@ -96,33 +107,103 @@ class Game {
             this.mouseY = e.clientY - rect.top;
         });
 
-        // Click canvas to start if on start screen
-        this.canvas.addEventListener('click', () => {
-            if (!this.started) this.startGame();
-            else if (this.gamePaused && !this.showLevelUp) this.togglePause();
+        // Use mousedown so clicks are more responsive for desktop
+        this.canvas.addEventListener('mousedown', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            this.handleCanvasClick(x, y, e);
         });
 
-        document.getElementById('restartBtn').addEventListener('click', () => {
-            // restart should take the player back into the game immediately
-            this.restart();
-        });
+        // Guard restart button in case it isn't in the DOM
+        const restartBtn = document.getElementById('restartBtn');
+        if (restartBtn) {
+            restartBtn.addEventListener('click', () => {
+                // restart should take the player back into the game immediately
+                this.restart();
+            });
+        }
     }
 
+    // start the game from the start menu (was missing -> caused start button error)
     startGame() {
-        // Start fresh and begin playing
         this.started = true;
         this.gameRunning = true;
         this.gamePaused = false;
         this.showLevelUp = false;
         this.gamePausedReason = '';
-        // Reset game state to initial values
+        // restart and begin immediately
         this.restart(true);
     }
 
+    // simple pause toggle used by ESC and pause menu
     togglePause() {
-        // Toggle pause state (not used during level-up)
         this.gamePaused = !this.gamePaused;
         this.gamePausedReason = this.gamePaused ? 'pause' : '';
+    }
+
+    // helper to test if a point is inside a rect
+    pointInRect(x, y, rect) {
+        if (!rect) return false;
+        return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+    }
+
+    // Centralized click handling for all canvas-drawn menus
+    handleCanvasClick(x, y, originalEvent) {
+        // Start menu interactions
+        if (!this.started) {
+            // start button
+            if (this.pointInRect(x, y, this.uiRects.startButton)) {
+                this.startGame();
+                return;
+            }
+            // color box
+            if (this.pointInRect(x, y, this.uiRects.colorBox)) {
+                this.player.cycleColor();
+                return;
+            }
+            // shape box
+            if (this.pointInRect(x, y, this.uiRects.shapeBox)) {
+                this.player.cycleShape();
+                return;
+            }
+            // clicking preview area also cycles color (friendly UX)
+            if (this.pointInRect(x, y, this.uiRects.previewBox)) {
+                this.player.cycleColor();
+                return;
+            }
+            return;
+        }
+
+        // Level up screen: click an upgrade option
+        if (this.showLevelUp) {
+            for (let i = 0; i < (this.uiRects.upgradeOptions || []).length; i++) {
+                const rect = this.uiRects.upgradeOptions[i];
+                if (this.pointInRect(x, y, rect)) {
+                    this.selectUpgrade(i);
+                    return;
+                }
+            }
+            return;
+        }
+
+        // Pause menu interactions
+        if (this.gamePaused && this.gamePausedReason === 'pause') {
+            if (this.pointInRect(x, y, this.uiRects.pause.resumeButton)) {
+                this.togglePause();
+                return;
+            }
+            if (this.pointInRect(x, y, this.uiRects.pause.restartButton)) {
+                this.restart(true);
+                return;
+            }
+            return;
+        }
+
+        // In-game: left click should fire toward mouse
+        if (originalEvent && originalEvent.button === 0) { // left mouse
+            this.player.shoot(this.bullets, this.mouseX, this.mouseY);
+        }
     }
 
     update(deltaTime) {
@@ -618,22 +699,25 @@ class Game {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Title
+        // Title (match gameOver styling: bold centered)
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 44px Arial';
+        ctx.font = 'bold 48px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('Neo Pix', panelX + panelW / 2, panelY + 60);
+        ctx.fillText('NEO PIX', panelX + panelW / 2, panelY + 70);
 
         // Subtitle / tagline
         ctx.font = '16px Arial';
         ctx.fillStyle = '#cccccc';
-        ctx.fillText('Survive waves, level up, and customize your ship', panelX + panelW / 2, panelY + 90);
+        ctx.fillText('Survive waves, level up, and customize your ship', panelX + panelW / 2, panelY + 100);
 
         // Left: Player preview box
         const previewX = panelX + 28;
-        const previewY = panelY + 120;
+        const previewY = panelY + 130;
         const previewW = 200;
-        const previewH = 200;
+        const previewH = 180;
+
+        // store preview rect so clicks can interact
+        this.uiRects.previewBox = { x: previewX, y: previewY, w: previewW, h: previewH };
 
         // Preview background
         ctx.fillStyle = 'rgba(255,255,255,0.02)';
@@ -645,7 +729,7 @@ class Game {
         ctx.fillStyle = '#ffffff';
         ctx.font = '14px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText('Player Preview', previewX + 8, previewY + 20);
+        ctx.fillText('Player Preview (click to cycle color)', previewX + 8, previewY + 20);
 
         // Draw player centered in preview
         const px = previewX + previewW / 2 - this.player.width / 2;
@@ -674,9 +758,39 @@ class Game {
             ctx.fillRect(px + 6, py + 6, this.player.width - 12, this.player.height - 12);
         }
 
+        // small interactive boxes: color and shape
+        const colorBoxX = previewX + 8;
+        const colorBoxY = previewY + previewH - 40;
+        const colorBoxW = 80;
+        const colorBoxH = 28;
+        ctx.fillStyle = this.player.color;
+        ctx.fillRect(colorBoxX, colorBoxY, colorBoxW, colorBoxH);
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.strokeRect(colorBoxX, colorBoxY, colorBoxW, colorBoxH);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px Arial';
+        ctx.fillText('Cycle Color', colorBoxX + 8, colorBoxY + 18);
+
+        // store color box rect
+        this.uiRects.colorBox = { x: colorBoxX, y: colorBoxY, w: colorBoxW, h: colorBoxH };
+
+        const shapeBoxX = colorBoxX + colorBoxW + 10;
+        const shapeBoxY = colorBoxY;
+        const shapeBoxW = 80;
+        const shapeBoxH = 28;
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.fillRect(shapeBoxX, shapeBoxY, shapeBoxW, shapeBoxH);
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.strokeRect(shapeBoxX, shapeBoxY, shapeBoxW, shapeBoxH);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('Change Shape', shapeBoxX + 6, shapeBoxY + 18);
+
+        // store shape box rect
+        this.uiRects.shapeBox = { x: shapeBoxX, y: shapeBoxY, w: shapeBoxW, h: shapeBoxH };
+
         // Right: controls & customization
         const rightX = panelX + 248;
-        const startY = panelY + 120;
+        const startY = panelY + 130;
         ctx.fillStyle = '#ffffff';
         ctx.font = '18px Arial';
         ctx.textAlign = 'left';
@@ -685,48 +799,30 @@ class Game {
         ctx.font = '14px Arial';
         ctx.fillStyle = '#cccccc';
         ctx.fillText('Move: WASD / Arrow Keys', rightX, startY + 28);
-        ctx.fillText('Shoot (aim): Move mouse', rightX, startY + 52);
-        ctx.fillText('Shoot (fire): Space or Left-Click', rightX, startY + 76);
+        ctx.fillText('Aim: Move mouse', rightX, startY + 52);
+        ctx.fillText('Shoot: Space or Left-Click', rightX, startY + 76);
         ctx.fillText('Pause: ESC', rightX, startY + 100);
 
-        // Customization instructions
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '18px Arial';
-        ctx.fillText('Customize', rightX, startY + 140);
+        // large start button (centered bottom of panel)
+        const hintY = panelY + panelH - 88;
+        const btnW = 240;
+        const btnH = 54;
+        const btnX = panelX + panelW / 2 - btnW / 2;
+        const btnY = hintY;
 
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#cccccc';
-        ctx.fillText('C : Cycle Color', rightX, startY + 168);
-        ctx.fillText('V : Change Inner Shape', rightX, startY + 192);
+        // draw button (visually similar to game over)
+        ctx.fillStyle = '#71ff4dff';
+        ctx.fillRect(btnX, btnY, btnW, btnH);
+        ctx.strokeStyle = '#094d00ff';
+        ctx.strokeRect(btnX, btnY, btnW, btnH);
 
-        // Draw key icons for emphasis
-        function drawKey(ctx, x, y, label) {
-            ctx.fillStyle = 'rgba(255,255,255,0.06)';
-            ctx.fillRect(x, y, 34, 26);
-            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-            ctx.strokeRect(x, y, 34, 26);
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(label, x + 17, y + 18);
-            ctx.textAlign = 'left';
-        }
-
-        drawKey(ctx, rightX + 140, startY + 152, 'C');
-        drawKey(ctx, rightX + 190, startY + 152, 'V');
-        drawKey(ctx, rightX + 140, startY + 20, 'W');
-        drawKey(ctx, rightX + 190, startY + 20, 'A');
-        drawKey(ctx, rightX + 240, startY + 20, 'S');
-        drawKey(ctx, rightX + 290, startY + 20, 'D');
-
-        // Start hint button
-        const hintY = panelY + panelH - 64;
-        ctx.fillStyle = '#ffd54d';
-        ctx.fillRect(panelX + panelW / 2 - 140, hintY, 280, 44);
         ctx.fillStyle = '#222222';
-        ctx.font = '18px Arial';
+        ctx.font = '20px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('PRESS ENTER / CLICK TO START', panelX + panelW / 2, hintY + 28);
+        ctx.fillText('START GAME', btnX + btnW / 2, btnY + btnH / 2 + 8);
+
+        // store start button rect for clicks
+        this.uiRects.startButton = { x: btnX, y: btnY, w: btnW, h: btnH };
 
         // Small footer
         ctx.font = '12px Arial';
@@ -739,18 +835,43 @@ class Game {
     }
 
     renderPauseMenu() {
-        this.ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        this.ctx.fillRect(0, 0, this.width, this.height);
+        // Dark overlay like existing but now with clickable buttons
+        const ctx = this.ctx;
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(0, 0, this.width, this.height);
 
-        this.ctx.fillStyle = 'white';
-        this.ctx.font = 'bold 36px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('PAUSED', this.width / 2, this.height / 2 - 30);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 36px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('PAUSED', this.width / 2, this.height / 2 - 80);
 
-        this.ctx.font = '18px Arial';
-        this.ctx.fillText('Press ESC to resume', this.width / 2, this.height / 2 + 10);
-        this.ctx.fillText('Click canvas to resume', this.width / 2, this.height / 2 + 40);
-        this.ctx.textAlign = 'left';
+        // Resume button
+        const btnW = 240;
+        const btnH = 46;
+        const btnX = this.width / 2 - btnW / 2;
+        const resumeY = this.height / 2 - 20;
+        ctx.fillStyle = '#6dd36d';
+        ctx.fillRect(btnX, resumeY, btnW, btnH);
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.strokeRect(btnX, resumeY, btnW, btnH);
+        ctx.fillStyle = '#062006';
+        ctx.font = '18px Arial';
+        ctx.fillText('RESUME', btnX + btnW / 2, resumeY + btnH / 2 + 6);
+
+        // Restart button
+        const restartY = resumeY + btnH + 12;
+        ctx.fillStyle = '#ffd54d';
+        ctx.fillRect(btnX, restartY, btnW, btnH);
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.strokeRect(btnX, restartY, btnW, btnH);
+        ctx.fillStyle = '#222222';
+        ctx.fillText('RESTART', btnX + btnW / 2, restartY + btnH / 2 + 6);
+
+        // store rects for clicks
+        this.uiRects.pause.resumeButton = { x: btnX, y: resumeY, w: btnW, h: btnH };
+        this.uiRects.pause.restartButton = { x: btnX, y: restartY, w: btnW, h: btnH };
+
+        ctx.textAlign = 'left';
     }
 
     renderLevelUpScreen() {
@@ -762,33 +883,51 @@ class Game {
         this.ctx.fillStyle = 'gold';
         this.ctx.font = 'bold 32px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('LEVEL UP!', this.width / 2, 150);
+        this.ctx.fillText('LEVEL UP!', this.width / 2, 140);
 
         // Upgrade options
         this.ctx.fillStyle = 'white';
         this.ctx.font = '20px Arial';
-        this.ctx.fillText('Choose an upgrade:', this.width / 2, 200);
+        this.ctx.fillText('Choose an upgrade:', this.width / 2, 180);
+
+        // Clear previous rects
+        this.uiRects.upgradeOptions = [];
 
         for (let i = 0; i < this.upgradeOptions.length; i++) {
             const upgrade = this.upgradeOptions[i];
-            const y = 250 + i * 60;
+            const y = 220 + i * 80;
+            const x = this.width / 2 - 220;
+            const w = 440;
+            const h = 64;
 
             // Background for option
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-            this.ctx.fillRect(this.width / 2 - 200, y - 25, 400, 50);
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+            this.ctx.fillRect(x, y - 8, w, h);
+
+            // Store rect for click handling
+            this.uiRects.upgradeOptions.push({ x: x, y: y - 8, w: w, h: h });
 
             // Upgrade text
             this.ctx.fillStyle = 'white';
             this.ctx.font = 'bold 18px Arial';
-            this.ctx.fillText(`${i + 1}. ${upgrade.name}`, this.width / 2, y);
+            this.ctx.textAlign = 'left';
+            this.ctx.fillText(`${i + 1}. ${upgrade.name}`, x + 18, y + 18);
             this.ctx.font = '14px Arial';
             this.ctx.fillStyle = 'lightgray';
-            this.ctx.fillText(upgrade.description, this.width / 2, y + 20);
+            this.ctx.fillText(upgrade.description, x + 18, y + 40);
+
+            // small "press 1/2/3" badge
+            this.ctx.fillStyle = 'rgba(255,255,255,0.04)';
+            this.ctx.fillRect(x + w - 74, y + 12, 54, 28);
+            this.ctx.fillStyle = 'white';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText((i + 1).toString(), x + w - 74 + 27, y + 32);
         }
 
         this.ctx.fillStyle = 'yellow';
         this.ctx.font = '16px Arial';
-        this.ctx.fillText('Press 1, 2, or 3 to select', this.width / 2, 450);
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Click an option or press 1, 2, or 3', this.width / 2, 520);
         this.ctx.textAlign = 'left';
     }
 
@@ -862,7 +1001,7 @@ class Player {
         this.shieldDuration = 1000;
         this.lifeSteal = false;
         // customization
-        this.colorChoices = ['#00ff00', '#00aaff', '#ff66ff', '#ffff00'];
+        this.colorChoices = ['#00ff00', '#00aaffff', '#8c00ffff', '#00ffffff', '#ff6600', '#ff0000ff'];
         this.colorIndex = 0;
         this.color = this.colorChoices[this.colorIndex];
         this.shapeIndex = 0; // 0: triangle, 1: circle, 2: square
@@ -1126,7 +1265,7 @@ class Tank {
         for (let i = -1; i <= 1; i++) {
             const dx = (player.x + player.width / 2) - (this.x + this.width / 2);
             const dy = (player.y + player.height / 2) - (this.y + this.height / 2);
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            const distance = Math.sqrt(dx * dx + dy * dy) || 1;
 
             const speed = 0.2;
             const spread = i * 0.3;
