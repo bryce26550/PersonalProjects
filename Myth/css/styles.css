@@ -1,0 +1,135 @@
+/*
+  styles.css
+  Dark, mythic, gothic theme inspired by Slavic folklore.
+  Contains layout, typography, colors, animations (snow is handled by JS canvas; subtle flicker and mist via CSS).
+*/
+
+:root{
+  --bg:#06070a; /* near-black */
+  --deep:#0a1220; /* deep blue-black */
+  --ice:#e6f5ff; /* icy white */
+  --silver:#b9c7d0;
+  --accent:#9fbfd8;
+  --muted:rgba(255,255,255,0.6);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  background:linear-gradient(180deg,var(--bg),var(--deep));
+  color:var(--muted);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+.container{max-width:1000px;margin:0 auto;padding:1rem}
+
+/* Header */
+.site-header{position:sticky;top:0;z-index:40;background:linear-gradient(180deg,rgba(0,0,0,0.45),transparent);backdrop-filter:blur(3px);padding:1rem 0}
+.site-header .title{font-family:"Playfair Display",serif;color:var(--ice);font-weight:900;margin:0;font-size:1.25rem}
+.site-header .subtitle{margin:0;color:var(--silver);font-size:0.9rem}
+.nav{margin-top:.6rem}
+.nav a{color:var(--muted);text-decoration:none;margin-right:1rem;font-size:0.9rem}
+.nav a:hover{color:var(--ice)}
+
+/* Hero */
+.hero{position:relative;min-height:80vh;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:2rem 0}
+#snow-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.hero-graphic{position:absolute;right:5%;bottom:0;opacity:0.85;filter:blur(0.4px) saturate(.6);z-index:5}
+.silhouette{height:75vh;max-height:900px;width:auto;display:block}
+.hero-content{position:relative;z-index:10;max-width:640px;text-align:left;padding:3rem}
+.hero-title{font-family:"Playfair Display",serif;color:var(--ice);font-size:3rem;margin:0 0 .5rem}
+.hero-lead{color:var(--silver);font-size:1.1rem;margin:0 0 1.2rem}
+.cta{background:linear-gradient(180deg,#7ea6bf,#678fa0);color:#061219;border:0;padding:.9rem 1.4rem;border-radius:6px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+.cta.small{padding:.6rem 1rem;font-size:.95rem}
+.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:.6rem 1rem;border-radius:6px}
+
+/* Mist layer */
+.mist{position:absolute;inset:0;z-index:6;pointer-events:none;background-image:linear-gradient(180deg,rgba(255,255,255,0.02),transparent 30%)}
+
+/* sections */
+.section{padding:4rem 1rem}
+h3{font-family:"Playfair Display",serif;color:var(--ice);margin-bottom:.6rem}
+.about p{max-width:60ch;color:var(--muted);line-height:1.7}
+.promises ul{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.promises li{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:1rem;border-radius:8px;border:1px solid rgba(255,255,255,0.03);color:var(--silver)}
+
+/* Support form */
+.pledge-form{display:grid;gap:.65rem;max-width:720px}
+.pledge-form label{font-size:.85rem;color:var(--silver)}
+.pledge-form input,.pledge-form textarea{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:var(--ice);padding:.7rem;border-radius:6px}
+.form-actions{display:flex;gap:.6rem;align-items:center;margin-top:.4rem}
+.pledge-confirm{margin-top:1rem;color:var(--accent);min-height:2.2rem}
+
+/* Footer */
+.site-footer{border-top:1px solid rgba(255,255,255,0.03);padding:1.2rem 0;margin-top:2rem}
+.footer-inner{display:flex;gap:1rem;align-items:center;justify-content:space-between}
+.sigils{font-size:1.45rem;color:var(--silver)}
+.social a{color:var(--muted);margin-left:.6rem;text-decoration:none}
+
+/* Small responsive tweaks */
+@media (max-width:800px){
+  .hero-graphic{right:-10%;opacity:0.6}
+  .hero-title{font-size:2rem}
+  .silhouette{height:55vh}
+  .container{padding:1rem}
+}
+
+/* Flicker animation for small accent elements */
+@keyframes flicker{
+  0%{opacity:1;transform:translateY(0)}
+  50%{opacity:.85;transform:translateY(-1px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+.hero-title{animation:flicker 4s ease-in-out infinite}
+
+/* small utility */
+.hidden{display:none}
+
+/* ---------------- SVG animations for Morana ---------------- */
+#morana-svg{display:block;max-width:420px;width:42vw;height:auto}
+.cloak-group{transform-origin:50% 80%;}
+.cloak-panel{animation:cloak-shimmer 8s ease-in-out infinite}
+.cloak-back{transition:opacity 0.4s}
+
+@keyframes cloak-shimmer{
+  0%{filter:brightness(1)}
+  50%{filter:brightness(1.08)}
+  100%{filter:brightness(1)}
+}
+
+/* Gentle sway for the crown/branches to give a living, gothic feel */
+.crown-group{transform-origin:300px 80px;animation:crown-sway 6s ease-in-out infinite}
+@keyframes crown-sway{
+  0%{transform:translateY(0) rotate(-1deg)}
+  50%{transform:translateY(-2px) rotate(1.2deg)}
+  100%{transform:translateY(0) rotate(-1deg)}
+}
+
+/* Hood slight bob to imply breath or wind */
+.hood-group{animation:hood-breathe 9s ease-in-out infinite}
+@keyframes hood-breathe{
+  0%{transform:translateY(0)}
+  50%{transform:translateY(-1.6px)}
+  100%{transform:translateY(0)}
+}
+
+/* Frost glimmer: subtle pulse on the frost-group */
+.frost-group{opacity:0.95;animation:frost-pulse 5.5s ease-in-out infinite}
+@keyframes frost-pulse{
+  0%{opacity:0.7;transform:translateY(0)}
+  50%{opacity:1;transform:translateY(-1px)}
+  100%{opacity:0.7;transform:translateY(0)}
+}
+
+/* --------------- Promises list hover/flair ---------------- */
+.promises li{position:relative;overflow:hidden;transition:transform .28s ease, box-shadow .28s ease}
+.promises li:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 14px 30px rgba(20,40,60,0.35)}
+.promises li::after{content:'';position:absolute;left:-120%;top:0;height:100%;width:60%;background:linear-gradient(120deg,rgba(255,255,255,0),rgba(255,255,255,0.06),rgba(255,255,255,0));transform:skewX(-20deg);transition:all .9s ease;opacity:0}
+.promises li:hover::after{left:120%;opacity:1;transition:all .9s ease}
+
+/* subtle decorative flourish on the promise headings */
+.promises li strong{display:block;color:var(--ice);margin-bottom:.35rem}
+

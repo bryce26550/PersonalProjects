@@ -1,0 +1,115 @@
+<!doctype html>
+<!--
+  Morana's Campaign - Single Page
+  Sections: Header, Hero (with snow), About, Promises, Support Form, Footer
+  Comments are added to explain each section's purpose.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Morana’s Campaign for Ruler of the Dead</title>
+  <!-- Elegant serif for titles, sans-serif for body -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Decorative canvas for snow effect (handled by JS) -->
+  <canvas id="snow-canvas" aria-hidden="true"></canvas>
+
+  <!-- Header: site title and subtitle -->
+  <header class="site-header">
+    <div class="container">
+      <h1 class="title">Morana’s Campaign for Ruler of the Dead</h1>
+      <p class="subtitle">Winter is Eternal, and Death Awaits All</p>
+      <nav class="nav">
+        <a href="#about">About</a>
+        <a href="#promises">Promises</a>
+        <a href="#support">Pledge</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section: full-screen banner with shadowy Morana silhouette and CTA -->
+  <main>
+    <section id="hero" class="hero">
+      <!-- Shadowy silhouette of Morana (inline SVG for easy styling) -->
+      <div class="hero-graphic" aria-hidden="true">
+        <!-- Using a JPEG artwork instead of the inline SVG. Place `assets/morana.jpg` in the assets folder.
+             The CSS still targets `.silhouette` for sizing. If you need a different filename, update the src. -->
+        <img src="morana.jpg" alt="Illustration of Morana" class="silhouette">
+        <!-- Fallback link to the SVG for users who have it available -->
+        <noscript>
+          <picture>
+            <source srcset="assets/morana.svg" type="image/svg+xml">
+            <img src="assets/morana.jpg" alt="Morana" class="silhouette">
+          </picture>
+        </noscript>
+      </div>
+
+      <!-- Hero content and CTA -->
+      <div class="hero-content container">
+        <h2 class="hero-title">The Frost Ascends</h2>
+        <p class="hero-lead">Embrace the hush of endless winter. Join Morana and claim your place beneath the pale stars.</p>
+        <button id="pledge-btn" class="cta">Pledge Your Soul</button>
+      </div>
+
+      <!-- Subtle mist/fog layer for depth -->
+      <div class="mist" aria-hidden="true"></div>
+    </section>
+
+    <!-- About Morana: short lore description -->
+    <section id="about" class="section about container">
+      <!-- Explain who Morana is and her motives -->
+      <h3>About Morana</h3>
+      <p>Goddess of death, winter, and rebirth. Morana brings the eternal cold that prunes the old and prepares the soil for what comes after. A challenger for the throne of the underworld, she promises order through absolute silence.</p>
+    </section>
+
+    <!-- Campaign Promises: stylized list -->
+    <section id="promises" class="section promises container">
+      <h3>Campaign Promises</h3>
+      <ul>
+        <li><strong>No soul forgotten</strong> — every memory preserved in the frost.</li>
+        <li><strong>Eternal peace — eternal frost</strong> — where rest is absolute.</li>
+        <li><strong>A fair end for all</strong> — impartial, inevitable, and just.</li>
+        <li><strong>Rebirth through thaw</strong> — even winter births new cycles.</li>
+      </ul>
+    </section>
+
+    <!-- Support section: mock form for pledging allegiance -->
+    <section id="support" class="section support container">
+      <h3>Pledge Allegiance</h3>
+      <!-- Form is mock — no backend. JS handles validation and local confirmation. -->
+      <form id="pledge-form" class="pledge-form" novalidate>
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" placeholder="Your name or epithet" required>
+
+        <label for="reason">Why do you join Morana?</label>
+        <textarea id="reason" name="reason" rows="4" placeholder="A short reason for pledging..." required></textarea>
+
+        <div class="form-actions">
+          <button type="submit" class="cta small">Pledge</button>
+          <button type="button" id="pledge-soul" class="ghost">Pledge Your Soul</button>
+        </div>
+      </form>
+
+      <!-- Confirmation area updated by JS after mock submission -->
+      <div id="pledge-confirm" class="pledge-confirm" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <!-- Footer: mystical symbols, copyright, social icons (mock links) -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="sigils" aria-hidden="true">☾ ❄︎ ⚯</div>
+      <small>© 2025 The Eternal Frost</small>
+      <div class="social">
+        <a href="#" aria-label="Follow on raven">🪶</a>
+        <a href="#" aria-label="Enter the frost">❄︎</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
